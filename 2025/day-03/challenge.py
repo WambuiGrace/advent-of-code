@@ -12,6 +12,16 @@ with open('input.txt', 'r') as file:
         result_one += (10 * largest_first + largest_second)
 
         # part 2
+        num = 0
+        current_index = 0
 
+        for step in range(12):
+            # print("Step: ", step, "Current index", current_index)
+            search_end = len(bank) - 12 + step + 1
+            current_largest = max(bank[current_index:search_end])
+            num += current_largest * (10 ** (12 - step - 1))
+            current_index = bank.index(current_largest, current_index) + 1
+        result_two += num
 
 print(result_one)
+print(result_two)
