@@ -5,13 +5,8 @@ def parse_line(line: str):
     start = line.find('[')
     end = line.find(']')
     target_str = line[start+1:end]
+    target = [1 if ch == '#' else 0 for ch in target_str]
 
-    n = len(target_str)
-    target_mask = 0
-    for i, ch in enumerate(target_str):
-        if ch == '#':
-            target_mask |= (1 << i)
-        
     buttons = []
     i = 0
     while i < len(line):
@@ -24,32 +19,34 @@ def parse_line(line: str):
                 indices = [int(x) for x in group.split(',')]
                 buttons.append(indices)
             i =j
-        i += 1
-        
+        i += 1  
+    return target, buttons
+
+def min_press(target, buttons):
+    n = len(target)
     button_masks = []
     for indices in buttons:
-        mask = 0
+        mask = [0] * n
         for idx in indices:
-            mask |= (1 << idx)
+            mask[idx] += 1
         button_masks.append(mask)
-    return n, target_mask, button_masks
 
-def min_presses(n, target_mask, button_masks):
-    start = 0
-    if start == target_mask:
-        return 0
-    dist = [-1] * (1 << n)
-    dist[start] = 0
-    queue = deque([start])
+    start = tuple([0] * n)
+    target = tuple(target)
+    queue = deque([(start, 0)])
+    seen = {start}
+
     while queue:
-        state = queue.popleft()
+        state, presses = queue.popleft()
+        if state == target:
+            return presses
         for mask in button_masks:
-            next_state = state ^ mask
-            if dist[next_state] == -1:
-                dist[next_state] = dist[state] + 1
-                if next_state == target_mask:
-                    return dist[next_state]
-                queue.append(next_state)
+            next_state = tuple((state[i] + mask[i]) % 2 for i in range(n))
+            if any(next_state[i] > target[i] for i in range(n)):
+                continue
+            if next_state not in seen:
+                seen.add(next_state)
+                queue.append((next_state, presses + 1))
     return -1
 
 def solve_file(filename):
@@ -58,8 +55,8 @@ def solve_file(filename):
         for line in file:
             if not line.strip():
                 continue
-            n, target_mask, button_masks = parse_line(line)
-            presses = min_presses(n, target_mask, button_masks)
+            target, buttons = parse_line(line)
+            presses = min_press(target, buttons)
             total += presses
     return total
 
